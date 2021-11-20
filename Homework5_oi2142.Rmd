@@ -104,3 +104,50 @@ results_df %>%
   
 ```
 
+
+
+
+
+# Problem 2 
+
+```{r list files, echo=FALSE}
+files = tibble(
+files =  list.files("./data"))
+```
+
+Subjects in the control group seems to have steady observations over the  weeks. In comparison, the experimental arm appears to have rising observations over the course of the 8 weeks. Overall, the experimental group appears to have higher observations over time compared to the comparison group.
+
+```{r,  echo=FALSE, message=FALSE}
+
+files =  
+  tibble (
+    list.files("./data", full.names=TRUE,
+             )) %>% 
+      map_dfr( read_csv ) 
+files$subject_id <- as.numeric(1:20)
+
+files = files %>% 
+  relocate(subject_id)
+
+```
+
+
+
+```{r, echo=FALSE}
+data_new = 
+  pivot_longer(
+    files, 
+    week_1:week_8,
+    names_to = "week", 
+    names_prefix = "week_",
+    values_to = "observations") %>% 
+      mutate(
+        arm = case_when(subject_id %in% 1:10 ~ 'control',
+                        subject_id %in% 11:20  ~ 'experimental'),
+                        arm = fct_reorder(arm, observations),
+                                          week = as.numeric(week)) 
+data_new %>% 
+  ggplot(aes(x = week, y = observations, group = subject_id, color = subject_id)) + geom_path() + 
+  labs(caption = "Observations on each subject over time") + facet_grid(~arm)
+
+```

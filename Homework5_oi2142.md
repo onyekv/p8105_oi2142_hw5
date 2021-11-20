@@ -122,3 +122,13 @@ results_df =
 ### Plot showing estimates and confidence intervals
 
 ![](Homework5_oi2142_files/figure-gfm/plot%20with%20estimates%20and%20ci-1.png)<!-- -->
+
+# Problem 2
+
+Subjects in the control group seems to have steady observations over the
+weeks. In comparison, the experimental arm appears to have rising
+observations over the course of the 8 weeks. Overall, the experimental
+group appears to have higher observations over time compared to the
+comparison group.
+
+![](Homework5_oi2142_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
