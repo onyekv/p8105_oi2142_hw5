@@ -1,0 +1,106 @@
+---
+title: "Homework 5 | Onyeka Isamah | oi2142"
+output: github_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+```
+
+# Problem 1
+
+- Cleaning the data, creating `city_state` and  `resolution` variables:
+```{r cleaning homicide data, message=FALSE}
+homicide_df = read_csv("./homicide-data.csv", na = c("", "Unknown")) %>% 
+  mutate(city_state = str_c(city, state),
+         resolution = case_when(
+           disposition == "Closed without arrest" ~ "unsolved",
+           disposition == "Open/No arrest" ~ "unsolved",
+           disposition == "Closed by arrest" ~ "solved"
+         )) %>% 
+  relocate(city_state) %>% 
+  filter(city_state != "TulsaAL")
+
+
+```
+
+The **raw data set** has **`r ncol(homicide_df)`** variables and  **`r nrow (homicide_df)`** observations. Variables include `uid`, `reported_date`, `victim_last`, `victim_first`, `victim_race`, `victim_age`, `victim_sex`, `city`, `state`, `lat`,`lon`, and `disposition`. 
+
+- Focusing on Baltimore to estimate the proportion of unsolved homicides. 
+```{r baltimore proportions}
+baltimore_df =
+  homicide_df %>% filter(city_state == "BaltimoreMD")
+
+
+baltimore_summary = baltimore_df %>% summarize(
+  unsolved = sum(resolution == "unsolved"),
+  n = n()
+)
+ 
+baltimore_test = 
+  prop.test(
+   x = baltimore_summary %>% pull(unsolved),
+   n=  baltimore_summary %>%pull(n))
+ 
+
+baltimore_test %>% 
+  broom::tidy() %>%  knitr::kable()
+```
+- Iterating across cities:
+
+
+```{r creating function for propotional testing}
+prop_test_function = 
+  function(city_df) {
+    
+    city_summary = 
+      city_df %>% 
+      summarize(
+      unsolved = sum(resolution == "unsolved"),
+             n = n()
+)
+ 
+    city_test = 
+      prop.test(
+        x = city_summary %>% pull(unsolved),
+        n =  city_summary %>%pull(n))
+    
+    return(city_test)
+  }
+
+prop_test_function(baltimore_df)
+
+homicide_df %>% 
+  filter(
+    city_state == "AlbuquerqueNM"
+  ) %>%  prop_test_function()
+```
+
+- Iterating across all cities.
+```{r using map to iterate prop test across cities}
+results_df = 
+  homicide_df %>% 
+  nest(data = uid:resolution) %>% 
+  mutate(
+    test_results = map(data, prop_test_function),
+    tidy_results = map(test_results, broom::tidy)
+  ) %>% 
+  select(city_state, tidy_results) %>% 
+  unnest(tidy_results) %>% 
+  select(city_state, estimate, starts_with("conf"))
+
+
+
+```
+### Plot showing estimates and confidence intervals
+```{r plot with estimates and ci,echo=FALSE}
+results_df %>% 
+  mutate(city_state = fct_reorder(city_state, estimate)) %>% 
+  ggplot(aes(x = city_state, y = estimate)) + geom_point() + geom_errorbar(aes(ymin = conf.low, ymax = conf.high ))+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  
+```
+
