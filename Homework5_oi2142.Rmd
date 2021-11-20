@@ -151,3 +151,38 @@ data_new %>%
   labs(caption = "Observations on each subject over time") + facet_grid(~arm)
 
 ```
+
+
+
+# Problem 3:
+
+```{r, echo=FALSE}
+library(tidyverse)
+
+set.seed(10)
+
+iris_with_missing = iris %>% janitor::clean_names() %>% 
+  map_df(~replace(.x, sample(1:150, 20), NA)) %>%
+  mutate(species = as.character(species))
+```
+
+
+
+
+Replacing the missing numeric variables with the column mean and replacing missing character variable, species, with *virginica*. 
+ 
+```{r, echo= FALSE}
+missing_function = function(x) {
+  if (is.character(x)) {
+    new_x = replace_na(x,"virginica")
+  }
+  else if (is.numeric(x)){
+    new_x = replace_na(x, mean(x, na.rm = TRUE))
+    }
+  new_x}
+
+new_iris = map_dfr(.x= iris_with_missing, ~missing_function(.x))
+
+head(new_iris, 25) %>%   knitr::kable()
+```
+
